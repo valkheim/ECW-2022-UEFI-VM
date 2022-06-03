@@ -1,0 +1,3 @@
+# Challenge de reverse UEFI
+
+Pour lancer le challenge dans QEMU : `./run.sh`
