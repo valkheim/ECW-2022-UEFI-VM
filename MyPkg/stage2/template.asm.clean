@@ -1,0 +1,184 @@
+include 'ebc.inc'
+include 'efi.inc'
+include 'format.inc'
+include 'utf8.inc'
+
+struct EFI_INPUT_KEY
+    ScanCode    UINT16
+    UnicodeChar    UINT16;CHAR16
+ends
+
+format peebc efi
+entry EfiMain
+
+; Assembly notes:
+; - Uses PUSHn (PUSH native) for external calls
+; - Function parameters are pushed in reverse order (CDECL)
+; - R0 is the stack pointer, so MOV R0, R0(+2,0) is equivalent to 2 x POPn
+
+section '.text' code executable readable
+
+Print:
+    ; gST->ConOut->OutputString(g_ST->ConOut, <R0>);
+    MOVREL  R1, gST
+    MOV     R1, @R1
+    MOVn    R1, @R1(EFI_SYSTEM_TABLE.ConOut)
+    PUSHn   @R0(0,+16)
+    PUSHn   R1
+    CALLEX  @R1(SIMPLE_TEXT_OUTPUT_INTERFACE.OutputString)
+    MOV     R0, R0(+2,0) ; POP R1,<arg>
+    RET
+
+Hello:
+    MOVREL  R1, HelloMsg
+    PUSH    R1
+    CALL    Print
+    POP     R1
+    MOVI    R7, EFI_SUCCESS
+    RET
+
+Gtfo:
+    MOVREL  R1, gST
+    MOVn    R6, @R1
+    MOVn    R6, @R6(EFI_SYSTEM_TABLE.RuntimeServices)
+    MOVI    R1, EfiResetShutdown
+    MOVI    R2, EFI_SUCCESS
+    MOVI    R3, 0
+    PUSHn   R3
+    PUSHn   R3
+    PUSHn   R2
+    PUSHn   R1
+    CALLEX  @R6(EFI_RUNTIME_SERVICES.ResetSystem)
+    MOV     R0, R0(+4,0) ; POP R1,R2,R3,R3
+    RET
+
+ReadChar:
+    ; gST->ConIn->Reset(g_ST->ConIn, FALSE);
+    MOVREL  R1, gST
+    MOV     R1, @R1
+    MOVn    R1, @R1(EFI_SYSTEM_TABLE.ConIn)
+    MOVI    R2, FALSE
+    PUSHn   R2
+    PUSHn   R1
+    CALLEX  @R1(SIMPLE_TEXT_INPUT_INTERFACE.Reset)
+    POPn    R1
+    POPn    R2
+
+    ; gBS->WaitForEvent(1, &g_ST->ConIn->WaitForKey, &Event);
+    MOVREL  R3, gST
+    MOV     R3, @R3
+    MOVn    R3, @R3(EFI_SYSTEM_TABLE.BootServices)
+    MOVREL  R2, Event
+    PUSHn   R2
+    MOV     R1, R1(SIMPLE_TEXT_INPUT_INTERFACE.WaitForKey)
+    PUSH    R1
+    MOVI    R1, 1
+    PUSHn   R1
+    CALLEX  @R3(EFI_BOOT_SERVICES.WaitForEvent)
+    MOV     R0, R0(+3,0)
+
+    ; gST->ConIn->ReadKeyStroke(g_ST->ConIn, &Key);    
+    MOVREL  R1, gST
+    MOV     R1, @R1
+    MOVn    R1, @R1(EFI_SYSTEM_TABLE.ConIn)
+    MOVREL  R2, Key
+    PUSHn   R2
+    PUSHn   R1
+    CALLEX  @R1(SIMPLE_TEXT_INPUT_INTERFACE.ReadKeyStroke)
+    POPn    R1
+    POPn    R2
+
+    ; gST->ConIn->Reset(g_ST->ConIn, FALSE);
+    MOVREL  R1, gST
+    MOV     R1, @R1
+    MOVn    R1, @R1(EFI_SYSTEM_TABLE.ConIn)
+    MOVI    R2, FALSE
+    PUSHn   R2
+    PUSHn   R1
+    CALLEX  @R1(SIMPLE_TEXT_INPUT_INTERFACE.Reset)
+    POPn    R1
+    POPn    R2
+
+    RET
+
+
+EfiMain:
+    ; Store parameters as global variables
+    MOVREL  R1, gST
+    MOVn    @R1, @R0(EFI_MAIN_PARAMETERS.SystemTable)
+
+    MOVREL  R1, HelloMsg
+    PUSH    R1
+    CALL    Print
+    POP     R1
+
+    XOR     R2, R2 ; init password counter
+_LP:
+    PUSH    R2    ; save counter
+
+    CALL    ReadChar
+
+    ; print char
+    MOVREL  R1, Key
+    MOVn    R1, R1(EFI_INPUT_KEY.UnicodeChar)
+    PUSH    R1
+    CALL    Print
+    POP     R1    
+
+    POPn    R2 ; get counter
+
+    ; Get unicode char of key
+    MOVREL  R1, Key
+    MOVn    R1, R1(EFI_INPUT_KEY.UnicodeChar)
+    MOVw    R4, @R1
+
+    ; Get current flag char
+    MOVREL  R5, Flag ; get Flag base address
+    MOVI    R3, 2
+    MUL     R3, R2
+    ADD     R5, R3
+    MOVw    R5, @R5    ; flag[2*i] because of unicode notation
+
+    MOVI    R3, __FLAG_ROT__
+    ADD     R5, R3
+
+    CMPeq   R4,R5
+    JMPcc   LP_
+    
+    ; loop condition
+    ;POPn R2
+    MOVI    R3, 1
+    ADD     R2, R3
+    CMPIgte R2, __FLAG_LENGTH__ ; flag length
+    JMPcc   _LP
+
+    MOVREL  R1, GoodBoy
+    PUSH    R1
+    CALL    Print
+    POP     R1
+
+LP_:
+    ; bad password
+    CALL    Gtfo
+
+    RET
+
+
+section 'VarBss' data readable writeable
+ImageHandle:
+    dq ?
+gST:
+    dq ?
+Event:
+    dq ?
+GoodBoy:
+    du 0x0D, 0x0A
+    du "Congratulations!"
+    du 0x0D, 0x0A, 0x00
+HelloMsg:
+    du "Hello EBC World!", 0x0D, 0x0A, 0x00
+Flag:
+    du "__FLAG__", 0x00
+Key:
+    rb EFI_INPUT_KEY.__size
+    du 0x00 ; end of string

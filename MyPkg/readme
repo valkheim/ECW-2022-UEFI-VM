@@ -1,0 +1,4 @@
+clone edk2
+setup this Pkg as Conf/target.txt active target
+build the shite using a symlink to this dir
+start ./build.sh to setup the VM and run in qemu

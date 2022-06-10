@@ -1,0 +1,84 @@
+## Setup
+
+git clone https://github.com/tianocore/edk2.git
+cd edk2
+git submodule update --init
+source edksetup.sh
+make -C BaseTools
+
+edk2 quickstart for virtualization
+https://www.kraxel.org/blog/2022/05/edk2-virt-quickstart/
+
+https://secret.club/2020/05/26/introduction-to-uefi-part-1.html
+
+https://stackoverflow.com/questions/63725239/build-edk2-in-linux
+https://damn99.com/2022-05-28-edk2_stable202205_build_error_on_nasm/
+http://x86asm.net/articles/uefi-programming-first-steps/
+https://edk2-docs.gitbook.io/edk-ii-uefi-driver-writer-s-guide/examples
+
+Bootkits
+https://github.com/ajkhoury/UEFI-Bootkit/tree/master/UefiDriver
+https://github.com/Orange-Cyberdefense/sweetlemonade
+https://github.com/lslx/BootLoader
+
+Pong
+https://github.com/Openwide-Ingenierie/Pong-UEFI
+
+Many code samples (event, gui, network, audio, disk, mouse, etc)
+https://github.com/zhenghuadai/uefi-programming/tree/master/book
+
+Setting Up a Linux Build Environment for EFI:
+https://wikileaks.org/ciav7p1/cms/page_27262984.html
+
+Generic efi/uefi
+https://wikileaks.org/ciav7p1/cms/page_26968080.html
+
+edk driver guide
+https://edk2-docs.gitbook.io/edk-ii-uefi-driver-writer-s-guide/
+DXE runtime driver
+https://tianocore-docs.github.io/edk2-ModuleWriteGuide/draft/8_dxe_drivers_non-uefi_drivers/88_dxe_runtime_driver.html
+Screenshot driver
+https://sudonull.com/post/91988-We-are-writing-a-DXE-driver-for-taking-screenshots-from-BIOS-Setup-and-other-UEFI-applications
+https://github.com/LongSoft/CrScreenshotDxe
+Tanda extracting windows runtime drivers
+https://standa-note.blogspot.com/2020/12/experiment-in-extracting-runtime.html
+
+UEFI service: EBC Virtual Machine
+https://speakerdeck.com/retrage/efi-byte-code-virtual-machine-for-fun-and-profit?slide=12
+https://rustrepo.com/repo/Pebaz-spore-rust-virtualization
+
+UEFI service: UEFI Decompression
+
+Change boot entries (to autostart my efi app)
+https://blog.stigok.com/2018/06/04/set-efi-boot-entries-uefi-shell.html
+
+SMM vulnerable driver
+https://www.synacktiv.com/en/publications/code-checkmate-in-smm.html
+
+load efi app from memory
+https://stackoverflow.com/questions/31390855/uefi-loadimage-unsupported-type
+
+## CTFs
+
+google ctf quals 2019
+https://blog.redrocket.club/2019/06/27/google-ctf-quals-2019-secure-boot/
+http://showlinkroom.me/2019/07/29/GoogleCTF-2019/
+
+Pwn2Win 2021
+https://ptr-yudai.hatenablog.com/entry/2021/05/31/232507#Pwn-373pts-Accessing-the-Trush-8-solves
+https://www.anquanke.com/post/id/243007
+https://www.wenwenya.com/anquan/563725.html
+
+Wreck it 2019
+https://circleous.github.io/posts/wreck-it-2019-ctf-writeup/
+
+d3ctf 2022
+https://github.com/yikesoftware/d3ctf-2022-pwn-d3guard/blob/main/writeup%20en-US.md
+https://eqqie.cn/index.php/archives/1929
+
+## Ideas
+
+Accès socket sur une uefi app
+* Password prompt
+* leak uefi app with fmt string vulnerability
+* password check using uefi features (decompression / VM)
